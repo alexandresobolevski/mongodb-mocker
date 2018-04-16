@@ -1,7 +1,7 @@
 MONGODB-MOCKER
 =======
 
-[![npm Version](https://img.shields.io/npm/v/enzyme.svg)](https://www.npmjs.com/package/enzyme) [![License](https://img.shields.io/npm/l/enzyme.svg)](https://www.npmjs.com/package/enzyme) [![Build Status](https://travis-ci.org/airbnb/enzyme.svg)](https://travis-ci.org/airbnb/enzyme) [![Coverage Status](https://coveralls.io/repos/airbnb/enzyme/badge.svg?branch=master&service=github)](https://coveralls.io/github/airbnb/enzyme?branch=master)
+![Build Status](https://circleci.com/gh/alexandresobolevski/mongodb-mocker.png?circle-token=ff90d6d8a7e87afb41dbbb4349231c1e97c9791e)
 
 The package *mongodb-mocker* is a class that abstracts an in-memory mongodb database. It's purpose is to aid developing of tests that use the mongodb database without writing a mock or connecting to a real database.
 
