@@ -3,7 +3,7 @@ MONGODB-MOCKER
 
 ![Build Status](https://circleci.com/gh/alexandresobolevski/mongodb-mocker.png?circle-token=ff90d6d8a7e87afb41dbbb4349231c1e97c9791e)
 
-The package *mongodb-mocker* is a class that abstracts an in-memory mongodb database. It's purpose is to aid developing of tests that use the mongodb database without writing a mock or connecting to a real database.
+The package *mongodb-mocker* is a class that abstracts an in-memory mongodb database. Its purpose is to aid developing of tests that use the mongodb database without writing a mock or connecting to a real database.
 
 Installation
 ===========
