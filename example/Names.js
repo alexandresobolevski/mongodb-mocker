@@ -1,4 +1,4 @@
-const mongoose = require('mongoose'); //eslint-disable-line
+const mongoose = require('mongoose');
 
 const schema = new mongoose.Schema({
   name: {

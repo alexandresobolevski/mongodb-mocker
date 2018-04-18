@@ -73,6 +73,8 @@ in db.js
 const mongoose = require('mongoose');
 const MongodbMocker = require('mongodb-mocker');
 
+
+// This is what your application's database class could look like
 class Db {
   constructor() {
     if (process.env.NODE_ENV === 'test') {
@@ -137,7 +139,6 @@ const Db = require('./db');
 const Names = require('./Names');
 
 const should = chai.should();
-// const should = chai.should();
 const db = new Db();
 
 describe('Db class', () => {
