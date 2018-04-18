@@ -89,21 +89,20 @@ describe('MongodbMocker', () => {
           should.exist(conn.s.databaseName);
           conn.s.databaseName.should.equal('some-database');
           dbConnection = conn;
-          return new Promise((res, rej) =>
-            conn
-              .collection('new-collection')
-              .insertMany([{ foo: 'bar' }, { foo: 'biz' }], (err) => {
-                if (err) { return rej(err); }
-                return res();
-              }));
+          return conn
+            .collection('new-collection')
+            .insertMany([{ foo: 'bar' }, { foo: 'biz' }], (err) => {
+              if (err) { return Promise.reject(err); }
+              return Promise.resolve();
+            });
         })
-        .then(() => new Promise((res, rej) =>
+        .then(() => new Promise((resolve, reject) =>
           dbConnection
             .collection('new-collection')
             .find({}, { fields: { _id: 0 } })
             .toArray((err, docs) => {
-              if (err) { return rej(err); }
-              return res(docs);
+              if (err) { return reject(err); }
+              return resolve(docs);
             })))
         .then((docs) => {
           should.exist(docs);
