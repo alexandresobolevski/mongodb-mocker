@@ -18,6 +18,11 @@
   ],
   "author": "Alexandre Sobolevski <sobolevski.a@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexandresobolevski/mongodb-mocker.git"
+  },
+  "homepage": "https://github.com/alexandresobolevski/mongodb-mocker#readme",
   "dependencies": {
     "mongodb": "^3.0.2",
     "mongodb-prebuilt": "^4.6.0",
