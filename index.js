@@ -10,41 +10,49 @@ const localhost = '127.0.0.1';
 
 class mongoDbMockedServer {
   constructor(opts = {}) {
-    this.config = opts.config || null;
-    this.maxRetries = opts.maxRetries || 5;
+    this.config = {
+      host: localhost,
+      dbPath: path.join(__dirname, './.data'),
+      storageEngine: 'ephemeralForTest',
+      autoShutdown: true,
+      started: false,
+      port: null,
+      maxRetries: opts.maxRetries || 5,
+    };
     this.mongoClient = opts.mongoClient || MongoClient;
     this.connectionsCache = {};
     this.serverEmitter = null;
     this.clients = [];
   }
 
-  getConfig() {
-    if (!this.config) {
-      return this.start();
-    }
-    return Promise.resolve(this.config);
-  }
-
   startMongoServer(retries = 0, cb) {
-    getPort()
+    Promise.resolve()
+      .then(() => {
+        if (this.config.port) {
+          return Promise.resolve(this.config.port);
+        }
+        return getPort();
+      })
       .then((port) => {
-        const config = { host: localhost, port };
+        this.config.port = port;
         const serverParams = {
           args: {
-            storageEngine: 'ephemeralForTest',
-            bind_ip: config.host,
-            port: config.port,
-            dbpath: path.join(__dirname, './.data'),
+            storageEngine: this.config.storageEngine,
+            bind_ip: this.config.host,
+            port: this.config.port,
+            dbpath: this.config.dbPath,
           },
-          auto_shutdown: true,
+          auto_shutdown: this.config.autoShutdown,
         };
         this.serverEmitter = mongodbPrebuilt.start_server(serverParams, (error) => {
-          if (error === 'EADDRINUSE' && retries < this.maxRetries) {
+          if (error === 'EADDRINUSE' && retries < this.config.maxRetries) {
             setTimeout(() => this.startMongoServer(retries + 1, cb), 200);
             return;
           }
-          this.config = config;
-          cb(error, config);
+          if (!error) {
+            this.config.started = true;
+          }
+          cb(error);
         });
       })
       .catch(e => cb(e));
@@ -52,34 +60,31 @@ class mongoDbMockedServer {
 
   // Mainly a wrapper of startMongoServer
   start() {
-    return new Promise((resolve, reject) => this.startMongoServer(0, (err, config) => {
-      if (err) { return reject(err); }
-      if (Object.keys(config).length < 1) {
-        return reject(new Error('Received empty configuration object'));
-      }
-      return resolve(config);
+    return new Promise((res, rej) => this.startMongoServer(0, (err) => {
+      if (err) { return rej(err); }
+      return res(this.config);
     }));
   }
 
   addConnection(dbName) {
     return new Promise((resolve, reject) => {
-      if (!this.config) {
+      if (!this.config.started) {
         reject(new Error('Can not add connection if server is not started'));
       }
       const { host, port } = this.config;
       const uri = `mongodb://${host}:${port}/${dbName}`;
 
       this.mongoClient.connect(uri, (error, client) => {
+        if (error) { return reject(error); }
         this.clients.push(client);
         const conn = client.db(dbName);
-        if (error) { return reject(error); }
         this.connectionsCache[dbName] = conn;
         return resolve(conn);
       });
     });
   }
 
-  getConnection(dbName = 'test') {
+  getConnection(dbName) {
     // Since mongodb 3+, database name is required
     return new Promise((resolve, reject) => {
       // If connection to database is cached return it
@@ -96,12 +101,7 @@ class mongoDbMockedServer {
           return this.start();
         })
         // Set new config if needed, add new connection and return
-        .then((newConfig) => {
-          if (newConfig) {
-            this.config = newConfig;
-          }
-          return this.addConnection(dbName);
-        })
+        .then(() => this.addConnection(dbName))
         .then(conn => resolve(conn))
         .catch(e => reject(e));
     });
@@ -117,6 +117,7 @@ class mongoDbMockedServer {
     return new Promise((resolve, reject) => {
       if (this.serverEmitter) {
         this.serverEmitter.emit('mongoShutdown');
+        this.config.started = false;
       }
 
       // Let the event propagate and close the server before deleting
@@ -128,7 +129,6 @@ class mongoDbMockedServer {
         });
         return Promise.all(closePromises).then(() => {
           this.serverEmitter = null;
-          this.config = null;
           this.connectionsCache = {};
           return resolve();
         }).catch(e => reject(e));

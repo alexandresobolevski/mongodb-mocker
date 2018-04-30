@@ -1,4 +1,4 @@
-/* global describe it beforeEach afterEach */
+/* global describe it before afterEach */
 /* eslint no-unused-expressions: "off" */
 const chai = require('chai');
 const sinon = require('sinon');
@@ -11,7 +11,7 @@ let dbConnection;
 let stubbedMethod;
 
 describe('MongodbMocker', () => {
-  beforeEach(() => {
+  before(() => {
     mongodbMocker = new MongodbMocker();
   });
 
@@ -26,9 +26,10 @@ describe('MongodbMocker', () => {
   describe('.startMongoServer', () => {
     it('catches an error coming from obtainig a free port', () =>
       mongodbMocker
-        .startMongoServer(0, (err, config) => {
+        .startMongoServer(0, (err) => {
           if (err) { return Promise.reject(err); }
-          should.exist(config);
+          should.exist(mongodbMocker.config);
+          mongodbMocker.config.started.should.be.true;
           return Promise.resolve();
         }));
   });
@@ -37,12 +38,12 @@ describe('MongodbMocker', () => {
     it('creates an in memory mongodb server and returns its config ' +
       'object', () => mongodbMocker
       .start()
-      .then((config) => {
-        should.exist(config);
-        config.should.be.an('object');
-        config.should.have.property('port');
-        config.should.have.property('host');
-        config.host.should.equal('127.0.0.1');
+      .then(() => {
+        mongodbMocker.config.started.should.be.true;
+        mongodbMocker.config.should.be.an('object');
+        mongodbMocker.config.should.have.property('port');
+        mongodbMocker.config.should.have.property('host');
+        mongodbMocker.config.host.should.equal('127.0.0.1');
       }));
 
     it('retires to connect a default of 5 times if the server is in use, ' +
@@ -51,10 +52,10 @@ describe('MongodbMocker', () => {
       stubbedMethod.yields('EADDRINUSE');
       return mongodbMocker
         .start()
-        .catch((e, config) => {
+        .catch((e) => {
           should.exist(e);
           e.should.equal('EADDRINUSE');
-          should.not.exist(config);
+          mongodbMocker.config.started.should.be.false;
         });
     });
 
@@ -67,12 +68,12 @@ describe('MongodbMocker', () => {
       stubbedMethod.onCall(4).yields(null);
       return mongodbMocker
         .start()
-        .then((config) => {
-          should.exist(config);
-          config.should.be.an('object');
-          config.should.have.property('port');
-          config.should.have.property('host');
-          config.host.should.equal('127.0.0.1');
+        .then(() => {
+          mongodbMocker.config.should.be.an('object');
+          mongodbMocker.config.started.should.be.true;
+          mongodbMocker.config.should.have.property('port');
+          mongodbMocker.config.should.have.property('host');
+          mongodbMocker.config.host.should.equal('127.0.0.1');
         });
     });
   });
@@ -83,7 +84,8 @@ describe('MongodbMocker', () => {
         'to provided database, returns its connection which can be used ' +
         'to store documents', () =>
       mongodbMocker
-        .getConnection('some-database')
+        .start()
+        .then(() => mongodbMocker.getConnection('some-database'))
         .then((conn) => {
           should.exist(conn);
           should.exist(conn.s.databaseName);
@@ -91,8 +93,9 @@ describe('MongodbMocker', () => {
           dbConnection = conn;
           return conn
             .collection('new-collection')
-            .insertMany([{ foo: 'bar' }, { foo: 'biz' }], (err) => {
+            .insertMany([{ foo: 'bar' }, { foo: 'biz' }], (err, inserted) => {
               if (err) { return Promise.reject(err); }
+              inserted.result.n.should.equal(2);
               return Promise.resolve();
             });
         })
@@ -112,7 +115,7 @@ describe('MongodbMocker', () => {
         }));
 
     it('does not start an in memory mongodb server if alredy started, ' +
-        'simply creates a connection to provided database', () =>
+        'simply creates a connection to provided database', () => {
       mongodbMocker
         .start()
         .then(() => {
@@ -126,13 +129,15 @@ describe('MongodbMocker', () => {
           should.exist(mongodbMocker.connectionsCache['some-database']);
           conn.s.databaseName.should.equal('some-database');
           mongodbMocker.start.called.should.be.false;
-        }));
+        });
+    });
 
     it('does not start an in memory mongodb server if alredy started, ' +
         'if connection to provided database was already created, ' +
         'simply return it from the cache', () =>
       mongodbMocker
-        .getConnection('some-database')
+        .start()
+        .then(() => mongodbMocker.getConnection('some-database'))
         .then(() => {
           mongodbMocker.start = sinon.spy();
           mongodbMocker.addConnection = sinon.spy();
@@ -146,20 +151,6 @@ describe('MongodbMocker', () => {
           should.exist(mongodbMocker.connectionsCache['some-database']);
           mongodbMocker.start.called.should.be.false;
           mongodbMocker.addConnection.called.should.be.false;
-        }));
-  });
-
-  describe('.getConfig', () => {
-    it('returns the relevant configuration (host and port) of the ' +
-        'mongodb in memory server', () =>
-      mongodbMocker
-        .start()
-        .then(() => mongodbMocker.getConfig())
-        .then((config) => {
-          should.exist(config);
-          config.should.have.property('port');
-          config.should.have.property('host');
-          config.host.should.equal('127.0.0.1');
         }));
   });
 });
