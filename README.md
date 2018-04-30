@@ -71,77 +71,56 @@ module.exports = Names;
 in db.js
 ```javascript
 const mongoose = require('mongoose');
-const MongodbMocker = require('mongodb-mocker');
 
-
-// This is what your application's database class could look like
 class Db {
   constructor() {
-    if (process.env.NODE_ENV === 'test') {
-      this.mockedServer = new MongodbMocker();
-    }
+    this.mongoose = mongoose;
+    this.mockedServer = null;
   }
 
   shutDown() {
-    return mongoose.disconnect((e) => {
+    return this.mongoose.disconnect((e) => {
       if (e) { Promise.reject(e); }
-      if (process.env.NODE_ENV === 'test') {
-        return this.mockedServer.shutDown();
-      }
       return Promise.resolve();
     });
   }
 
-  startMockDb(dbName) {
-    return this.mockedServer
-      .getConnection(dbName)
-      .then(() => this.mockedServer.getConfig())
-      .then((config) => {
-        // The mocked db runs locally
-        const uri = `mongodb://127.0.0.1:${config.port}/test`;
-        return Promise.resolve(uri);
-      });
-  }
-
-  buildUri(dbName) {
-    if (process.env.NODE_ENV === 'test') {
-      // If we're in test mode, start an in-memory mongo mock
-      return this.startMockDb(dbName).then(uri => Promise.resolve(uri));
-    }
-    // Otherwise we will be connecting to a real database whose
-    // credentials are stored in env variables
-    const url = process.env.MONGODB_URL;
-    const usr = process.env.MONGODB_USR;
-    const psw = process.env.MONGODB_PSW;
-    const uri = `mongodb://${usr}:${psw}@${url}/${dbName}`;
-    return Promise.resolve(uri);
-  }
-
   initialize(dbName) {
-    return this.buildUri(dbName)
-      .then(uri => mongoose.connect(uri, (err) => {
+    const url = process.env.MONGODB_URL;
+    this.uri = `mongodb://${url}/${dbName}`;
+    return Promise.resolve()
+      .then(() => this.mongoose.connect(this.uri, (err) => {
         if (err) { return Promise.reject(err); }
-        return Promise.resolve(mongoose.createConnection(uri));
+        return Promise.resolve(this.mongoose.createConnection(this.uri));
       }))
       .then(conn => Promise.resolve(conn.connections[0]));
   }
 }
 
 module.exports = Db;
+
 ```
 
 in db.spec.js
 ```javascript
-/* global describe it beforeEach afterEach */
+/* global describe it before beforeEach afterEach */
 process.env.NODE_ENV = 'test';
+process.env.MONGODB_URL = 'localhost:8000';
+
 const chai = require('chai');
 const Db = require('./db');
 const Names = require('./Names');
+const MongodbMocker = require('../index');
 
 const should = chai.should();
 const db = new Db();
 
 describe('Db class', () => {
+  before(() => {
+    const mongodbMocker = new MongodbMocker({ port: '8000' });
+    return mongodbMocker.start();
+  });
+
   beforeEach(() => db.initialize());
 
   afterEach(() => db.shutDown());
@@ -155,4 +134,10 @@ describe('Db class', () => {
       res.name.should.equal('MyName');
     }));
 });
+```
+
+Run this example from the root of this repository
+```bash
+npm i
+mocha ./example/db.spec.js
 ```
