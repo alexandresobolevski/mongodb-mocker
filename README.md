@@ -16,35 +16,23 @@ Basic Usage
 ===========
 
 ```javascript
-import MongodbMocker from 'mongodb-mocker';
+const MongodbMocker = require('../index');
+const yourDatabase = new Db();
+const mongodbMocker = new MongodbMocker({ port: '8000' });
 
-const mongodbMocker = new MongodbMocker();
-let dbConnection;
-mongodbMocker
-  .start()
-  .then(() => mongodbMocker.getConnection('some-database'))
-  .then((conn) => {
-    // Returns mongodb client v3+ 
-    dbConnection = conn;
-    return conn
-      .collection('new-collection')
-      .insertMany([{ foo: 'bar' }, { foo: 'biz' }], (err, inserted) => {
-        if (err) { return Promise.reject(err); }
-        return Promise.resolve();
-      });
-  })
-  .then(() => new Promise((resolve, reject) =>
-    dbConnection
-      .collection('new-collection')
-      .find({}, { fields: { _id: 0 } })
-      .toArray((err, docs) => {
-        if (err) { return reject(err); }
-        return resolve(docs);
-      })))
-  .then((docs) => {
-    console.log(docs);
-    // prints out [{ foo: 'bar' }, { foo: 'biz' }]
-  }));
+describe('Your tests', () => {
+  before(() => mongodbMocker.start());
+
+  // yourDatabase should connect to `localhost:8000/yourDatabaseName`
+  beforeEach(() => yourDatabase.initialize());
+
+  afterEach(() => yourDatabase.shutDown());
+
+  after(() => mongodbMocker.shutDown());
+
+  // Tests here that use your database client connected to `localhost:8000/yourDatabaseName`
+  
+});
 ```
 
 Using with Mongoose
