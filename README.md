@@ -1,7 +1,8 @@
 MONGODB-MOCKER
 =======
 
-![Build Status](https://img.shields.io/circleci/project/github/alexandresobolevski/mongodb-mocker/master.svg)![Downloads](https://img.shields.io/npm/dt/mongodb-mocker.svg)
+![Build Status](https://img.shields.io/circleci/project/github/alexandresobolevski/mongodb-mocker/master.svg)
+![Downloads](https://img.shields.io/npm/dt/mongodb-mocker.svg)
 
 The package *mongodb-mocker* is a class that abstracts an in-memory mongodb database. Its purpose is to aid developing of tests that use the mongodb database without writing a mock or connecting to a real database.
 
