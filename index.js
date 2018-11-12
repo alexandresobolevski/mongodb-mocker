@@ -14,7 +14,7 @@ const defaultConfig = {
   storageEngine: 'ephemeralForTest',
   autoShutdown: true,
   started: false,
-  port: 8001,
+  port: null,
   maxRetries: 5,
   shutDownWait: 100,
 };
