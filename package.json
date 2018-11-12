@@ -1,6 +1,6 @@
 {
   "name": "mongodb-mocker",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "description": "Simple class to manage an in-memory mongodb database for tests or local application",
   "main": "index.js",
   "scripts": {
