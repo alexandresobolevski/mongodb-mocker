@@ -32,7 +32,7 @@ describe('Your tests', () => {
   after(() => mongodbMocker.shutDown());
 
   // Tests here that use your database client connected to `localhost:8000/yourDatabaseName`
-  
+
 });
 ```
 
@@ -130,5 +130,3 @@ Run this example from the root of this repository
 npm i
 mocha ./example/db.spec.js
 ```
-
-Test
