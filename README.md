@@ -17,21 +17,22 @@ Basic Usage
 ===========
 
 ```javascript
-const MongodbMocker = require('../index');
-const yourDatabase = new Db();
+const MongodbMocker = require('mongodb-mocker');
+const yourDatabaseClient = new Db();
 const mongodbMocker = new MongodbMocker({ port: '8000' });
 
 describe('Your tests', () => {
   before(() => mongodbMocker.start());
 
-  // yourDatabase should connect to `localhost:8000/yourDatabaseName`
-  beforeEach(() => yourDatabase.initialize());
+  // yourDatabaseClient should connect to 'localhost:8000/yourDatabaseName'
+  beforeEach(() => yourDatabaseClient.initialize());
 
-  afterEach(() => yourDatabase.shutDown());
+  // make sure to clean up your client
+  afterEach(() => yourDatabaseClient.shutDown());
 
   after(() => mongodbMocker.shutDown());
 
-  // Tests here that use your database client connected to `localhost:8000/yourDatabaseName`
+  // Tests here that use your database client
 
 });
 ```
@@ -99,7 +100,7 @@ process.env.MONGODB_URL = 'localhost:8000';
 const chai = require('chai');
 const Db = require('./db');
 const Names = require('./Names');
-const MongodbMocker = require('../index');
+const MongodbMocker = require('mongodb-mocker');
 
 const should = chai.should();
 const db = new Db();
